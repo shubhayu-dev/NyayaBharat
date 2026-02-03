@@ -1,8 +1,8 @@
-# CivicShield Platform Design Document
+# NyayaBharat Platform Design Document
 
 ## Overview
 
-CivicShield is a unified civic engagement and legal assistance platform that bridges the gap between Indian citizens and public systems. The platform leverages AWS cloud services and WhatsApp integration to provide accessible legal assistance, document translation, complaint filing, and rights education to overcome barriers like language differences, legal complexity, and digital illiteracy.
+NyayaBharat is a unified civic engagement and legal assistance platform that bridges the gap between Indian citizens and public systems. The platform leverages AWS cloud services and WhatsApp integration to provide accessible legal assistance, document translation, complaint filing, and rights education to overcome barriers like language differences, legal complexity, and digital illiteracy.
 
 ## Architecture
 
