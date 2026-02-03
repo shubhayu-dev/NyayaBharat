@@ -2,11 +2,11 @@
 
 ## Introduction
 
-CivicShield is a unified civic engagement and legal assistance platform designed to bridge the massive disconnect between Indian citizens and public systems. The platform addresses critical barriers including language barriers, legal complexity, and digital illiteracy by providing accessible tools for document translation, legal guidance, complaint filing, and rights education through familiar interfaces like WhatsApp.
+NyayaBharat is a unified civic engagement and legal assistance platform designed to bridge the massive disconnect between Indian citizens and public systems. The platform addresses critical barriers including language barriers, legal complexity, and digital illiteracy by providing accessible tools for document translation, legal guidance, complaint filing, and rights education through familiar interfaces like WhatsApp.
 
 ## Glossary
 
-- **CivicShield**: The unified civic engagement and legal assistance platform
+- **NyayaBharat**: The unified civic engagement and legal assistance platform
 - **Legal_Lens**: The bureaucracy simplifier component that processes legal documents
 - **Officer_Mode**: The admin assistant component for government officials
 - **Voice_Complaint_System**: The auto-complaint filing system that processes voice inputs
@@ -91,11 +91,11 @@ CivicShield is a unified civic engagement and legal assistance platform designed
 
 #### Acceptance Criteria
 
-1. WHEN processing legal queries, THE CivicShield SHALL not permanently store PII
-2. WHEN handling sensitive documents, THE CivicShield SHALL encrypt data in transit and at rest
-3. WHEN processing is complete, THE CivicShield SHALL automatically delete temporary files within 24 hours
-4. WHEN users request data deletion, THE CivicShield SHALL remove all associated data within 48 hours
-5. WHEN accessing user data, THE CivicShield SHALL log all access attempts for audit purposes
+1. WHEN processing legal queries, THE NyayaBharat SHALL not permanently store PII
+2. WHEN handling sensitive documents, THE NyayaBharat SHALL encrypt data in transit and at rest
+3. WHEN processing is complete, THE NyayaBharat SHALL automatically delete temporary files within 24 hours
+4. WHEN users request data deletion, THE NyayaBharat SHALL remove all associated data within 48 hours
+5. WHEN accessing user data, THE NyayaBharat SHALL log all access attempts for audit purposes
 
 ### Requirement 7: Performance and Reliability
 
@@ -103,11 +103,11 @@ CivicShield is a unified civic engagement and legal assistance platform designed
 
 #### Acceptance Criteria
 
-1. WHEN processing voice messages, THE CivicShield SHALL respond within 5 seconds
-2. WHEN processing document images, THE CivicShield SHALL complete analysis within 10 seconds
-3. WHEN system load is high, THE CivicShield SHALL maintain response times through auto-scaling
-4. WHEN services are unavailable, THE CivicShield SHALL provide clear status messages to users
-5. WHEN errors occur, THE CivicShield SHALL log incidents and attempt automatic recovery
+1. WHEN processing voice messages, THE NyayaBharat SHALL respond within 5 seconds
+2. WHEN processing document images, THE NyayaBharat SHALL complete analysis within 10 seconds
+3. WHEN system load is high, THE NyayaBharat SHALL maintain response times through auto-scaling
+4. WHEN services are unavailable, THE NyayaBharat SHALL provide clear status messages to users
+5. WHEN errors occur, THE NyayaBharat SHALL log incidents and attempt automatic recovery
 
 ### Requirement 8: Multi-Language Support
 
@@ -115,11 +115,11 @@ CivicShield is a unified civic engagement and legal assistance platform designed
 
 #### Acceptance Criteria
 
-1. WHEN users first interact with the system, THE CivicShield SHALL detect or ask for language preference
-2. WHEN providing responses, THE CivicShield SHALL communicate in the user's preferred language
-3. WHEN translating documents, THE CivicShield SHALL support major Indian regional languages
-4. WHEN language detection fails, THE CivicShield SHALL default to Hindi and allow manual language selection
-5. WHEN switching languages, THE CivicShield SHALL maintain conversation context and user preferences
+1. WHEN users first interact with the system, THE NyayaBharat SHALL detect or ask for language preference
+2. WHEN providing responses, THE NyayaBharat SHALL communicate in the user's preferred language
+3. WHEN translating documents, THE NyayaBharat SHALL support major Indian regional languages
+4. WHEN language detection fails, THE NyayaBharat SHALL default to Hindi and allow manual language selection
+5. WHEN switching languages, THE NyayaBharat SHALL maintain conversation context and user preferences
 
 ### Requirement 9: Complaint Routing and Tracking
 
@@ -139,8 +139,8 @@ CivicShield is a unified civic engagement and legal assistance platform designed
 
 #### Acceptance Criteria
 
-1. WHEN receiving WhatsApp messages, THE CivicShield SHALL process them through AWS API Gateway and Lambda functions
-2. WHEN scaling is needed, THE CivicShield SHALL automatically provision additional AWS resources
-3. WHEN integrating with external services, THE CivicShield SHALL handle API failures gracefully with retry mechanisms
-4. WHEN monitoring system health, THE CivicShield SHALL provide comprehensive logging and metrics
-5. WHEN deploying updates, THE CivicShield SHALL maintain zero-downtime deployment capabilities
+1. WHEN receiving WhatsApp messages, THE NyayaBharat SHALL process them through AWS API Gateway and Lambda functions
+2. WHEN scaling is needed, THE NyayaBharat SHALL automatically provision additional AWS resources
+3. WHEN integrating with external services, THE NyayaBharat SHALL handle API failures gracefully with retry mechanisms
+4. WHEN monitoring system health, THE NyayaBharat SHALL provide comprehensive logging and metrics
+5. WHEN deploying updates, THE NyayaBharat SHALL maintain zero-downtime deployment capabilities
