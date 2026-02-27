@@ -1,45 +1,154 @@
-# NyayaBharat Platform - Prototype
+# NyayaBharat Platform ⚖️
 
-Unified civic engagement and legal assistance platform for Indian citizens.
+**NyayaBharat** is a unified civic engagement and legal assistance platform designed to bridge the gap between Indian citizens and the legal system through AI-driven simplification and vernacular support.
 
-## Features
+Built for the AI for Bharat Hackathon.
 
-- **Legal_Lens**: Document processing and translation for citizens
-- **Officer_Mode**: Vernacular document translation for government officials
-- **Voice_Complaint_System**: Voice-based complaint filing
-- **Rights_Chatbot**: Legal rights information with RAG
-- **WhatsApp_Interface**: WhatsApp bot integration
+---
 
-## Quick Start
+## 🚀 Features
+
+### 📄 Legal Lens  
+Upload complex legal notices and receive:
+- Simplified explanation at a 5th-grade reading level  
+- Extracted deadlines  
+- Clear action items  
+
+### 🏛️ Officer Mode  
+Assists government officials by:
+- Translating vernacular citizen petitions  
+- Converting them into formal official English/Hindi  
+
+### 🎙️ Voice Complaint System  
+- File grievances via voice messages  
+- Automatic transcription  
+- Smart categorization  
+- Routed to the correct department  
+
+### 🤖 Rights Chatbot  
+A RAG-powered assistant providing:
+- Authoritative answers on Indian law  
+- References from Constitution, BNS, IPC  
+- Specific citations  
+
+### 📲 WhatsApp Interface  
+- Seamless access via WhatsApp Business bot  
+- Entry point for all services  
+
+---
+
+## 🏗️ Architecture
+
+NyayaBharat follows a decoupled architecture for scalability:
+
+### 🖥️ Frontend
+- Streamlit (Python-based UI dashboard)
+
+### ⚙️ Backend
+- FastAPI (Asynchronous REST API)
+
+### 🧠 Intelligence Layer
+- AWS Textract (OCR processing)  
+- AWS Bedrock (LLM processing)  
+- AWS Transcribe (Voice-to-Text)  
+
+---
+
+## 🛠️ Quick Start
+
+### ✅ Prerequisites
+- Python 3.12+  
+- Virtual environment activated  
+
+### 📦 Installation
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Run the server
-python app.py
 ```
 
-Server runs at `http://localhost:8000`
+---
 
-## API Endpoints
+## ▶️ Running the Platform
 
-- `POST /api/document/process` - Process legal documents
-- `POST /api/officer/translate` - Translate vernacular documents
-- `POST /api/complaint/voice` - File voice complaints
-- `POST /api/rights/query` - Query legal rights
-- `POST /api/whatsapp/webhook` - WhatsApp webhook
+You must run both the backend and frontend in separate terminals.
 
-## Architecture
+### 🖥️ Terminal 1: Backend API
 
-```
-WhatsApp Bot → API Gateway → Services → AWS (Textract, Bedrock, Transcribe, SES)
+```bash
+python main.py
 ```
 
-## Services
+API runs at:  
+http://localhost:8000
 
-- `services/legal_lens.py` - Document processing
-- `services/officer_mode.py` - Official translations
-- `services/voice_complaint.py` - Complaint filing
-- `services/rights_chatbot.py` - Legal Q&A
-- `services/whatsapp_interface.py` - WhatsApp integration
+---
+
+### 🖥️ Terminal 2: Frontend Dashboard
+
+```bash
+streamlit run dashboard.py
+```
+
+UI runs at:  
+http://localhost:8501
+
+---
+
+## 📁 Project Structure
+
+```text
+main.py            # FastAPI application and routing
+dashboard.py       # Streamlit-based user interface
+services/          # Core logic for OCR, translation, and RAG
+requirements.txt   # Python dependencies
+.gitignore         # Prevents sensitive/local files from being pushed
+```
+
+---
+
+## 🔐 .gitignore
+
+Create a file named `.gitignore` in your root folder and paste the following:
+
+```text
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project specific
+.vscode/
+.idea/
+*.log
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# AWS/Secrets
+.aws/
+credentials
+secrets.json
+```
+
+This ensures:
+- Virtual environments are not pushed  
+- Local configuration files remain private  
+- AWS credentials and secrets stay secure  
+
+---
+
+## 👩‍💻 Built For
+
+AI for Bharat Hackathon  
+Empowering citizens. Simplifying justice. Bridging governance.

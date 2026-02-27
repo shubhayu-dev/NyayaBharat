@@ -1,4 +1,4 @@
-#!/home/nikhil/Desktop/Tabletop/NyayaBharat/venv/bin/python3
+#!/home/shubhayu/Desktop/NyayaBharat/venv/bin/python3
 
 import sys
 import json
