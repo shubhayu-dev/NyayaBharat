@@ -1,0 +1,35 @@
+# --- Python Specific ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Environment Variables (CRITICAL) ---
+# Never push your AWS keys or database passwords
+.env
+.flaskenv
+secrets.json
+
+# --- Editor / IDE Specific ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- Project Specifics ---
+*.log
+data/raw/
+outputs/
+temp/
+
+# --- Distribution / Build ---
+dist/
+build/
+*.egg-info/
