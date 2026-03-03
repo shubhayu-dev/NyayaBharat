@@ -33,14 +33,34 @@ if choice == "Rights Bot":
 elif choice == "Legal Lens":
     st.header("🔍 Legal Lens: Document Simplifier")
     up = st.file_uploader("Upload Legal Notice", type=['jpg', 'pdf'])
+    lang = st.selectbox(
+        "Output language",
+        [
+            ("Hindi", "hi"),
+            ("English", "en"),
+            ("Bengali", "bn"),
+            ("Tamil", "ta"),
+            ("Telugu", "te"),
+            ("Marathi", "mr"),
+            ("Gujarati", "gu"),
+        ],
+        format_func=lambda x: x[0],
+    )
     if up and st.button("Simplify"):
         files = {"file": up.getvalue()}
-        res = requests.post(f"{API_BASE}/api/document/process", files=files, data={"language": "en"}).json()
+        res = requests.post(
+            f"{API_BASE}/api/document/process",
+            files=files,
+            data={"language": lang[1]},
+        ).json()
         st.subheader("What this means:")
         st.write(res['simplified_text'])
         col1, col2 = st.columns(2)
-        col1.metric("Deadlines", res['deadlines'][0])
-        col2.write("**Actions:** " + ", ".join(res['action_items']))
+        # safe access in case the response doesn't include these fields
+        deadlines = res.get('deadlines', [])
+        actions = res.get('action_items', [])
+        col1.metric("Deadlines", deadlines[0] if deadlines else "n/a")
+        col2.write("**Actions:** " + ", ".join(actions))
 
 elif choice == "Officer Mode":
     st.header("👮 Government Officer Portal")

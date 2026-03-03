@@ -14,6 +14,32 @@ Upload complex legal notices and receive:
 - Extracted deadlines  
 - Clear action items  
 
+The Streamlit dashboard now includes a language dropdown.  Make sure you
+select **Hindi** or **Bengali** etc. instead of the default **English**; the
+front end previously hard‑coded `language=en`, which is why every response
+came back in English.
+
+**Note on Languages:**
+- The OCR engine (EasyOCR) works best with **English and Hindi** documents.
+  Bengali OCR is hit‑or‑miss due to library limitations, but translation still
+  happens via the model.
+- You can request output in any of the supported languages: `hi`, `en`, `bn`,
+  `ta`, `te`, `mr`, `gu`.
+- The output **simplification and translation** are always performed in your
+  requested language via the Groq LLM, regardless of the input document's
+  language (as long as OCR can detect text).
+
+> You do **not** need a Gemini API key. The backend uses only Groq
+> (configured via `GROQ_API_KEY`). No Google API is involved unless you
+> deliberately rewrite the service.  
+
+**Debugging & logs:**
+- The service prints `[DEBUG]` messages when processing documents and
+  performing translations. These help verify which language is being requested
+  and whether the model returned ASCII (English) or non‑ASCII text.  
+- You may see a Torch warning about `pin_memory` when EasyOCR loads; this is
+  harmless on CPU.
+
 ### 🏛️ Officer Mode  
 Assists government officials by:
 - Translating vernacular citizen petitions  

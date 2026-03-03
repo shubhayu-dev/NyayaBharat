@@ -5,8 +5,18 @@ from typing import Optional, Dict, Any, List
 import uvicorn
 import uuid
 from datetime import datetime
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# --- IMPORT YOUR SERVICE ---
+from services.legal_lens import LegalLensService
 
 app = FastAPI(title="NyayaBharat API", version="1.0.0")
+
+# Initialize the service once so models stay in memory
+legal_service = LegalLensService()
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,22 +42,25 @@ async def root():
 
 @app.post("/api/document/process", tags=["Legal Lens"])
 async def process_doc(file: UploadFile = File(...), language: str = Form("hi")):
-    # Simulation Logic
-    return {
-        "document_id": str(uuid.uuid4())[:8],
-        "simplified_text": f"This document is a formal request regarding property rights, simplified here in {language}.",
-        "language": language,
-        "processing_time": 1.2,
-        "deadlines": ["March 15, 2026", "April 01, 2026"],
-        "action_items": ["Submit Form A", "Pay Stamp Duty"]
-    }
+    # 1. Read the uploaded file bytes
+    image_data = await file.read()
+    
+    # 2. Call the REAL service (OCR + LLM via Groq)
+    # This replaces your old "Simulation Logic"
+    result = await legal_service.process_document(image_data, language)
+    
+    if result.get("status") == "error":
+        raise HTTPException(status_code=500, detail=result.get("message"))
+        
+    return result
 
+# --- OTHER ENDPOINTS (KEEP AS IS FOR NOW) ---
 @app.post("/api/officer/translate", tags=["Officer Mode"])
 async def officer_translate(file: UploadFile = File(...)):
     return {
         "document_id": str(uuid.uuid4())[:8],
         "original_language": "Marathi",
-        "formal_translation": "Subject: Formal Petition for Civic Redressal...\nDetailed translation of the vernacular script follows.",
+        "formal_translation": "Subject: Formal Petition for Civic Redressal...",
         "document_type": "Public Grievance",
         "confidence_score": 0.98
     }

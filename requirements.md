@@ -144,3 +144,4 @@ NyayaBharat is a unified civic engagement and legal assistance platform designed
 3. WHEN integrating with external services, THE NyayaBharat SHALL handle API failures gracefully with retry mechanisms
 4. WHEN monitoring system health, THE NyayaBharat SHALL provide comprehensive logging and metrics
 5. WHEN deploying updates, THE NyayaBharat SHALL maintain zero-downtime deployment capabilities
+- `paddlepaddle==3.0.0` (fixes OneDNN implementation error)

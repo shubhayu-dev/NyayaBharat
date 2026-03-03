@@ -6,3 +6,10 @@ python-multipart>=0.0.12
 boto3>=1.35.0
 python-dotenv>=1.0.1
 requests>=2.32.0
+paddlepaddle==3.0.0
+
+# image generation for tests and OCR support
+Pillow>=10.0.0
+
+easyocr>=1.7.0
+groq>=1.0.0
