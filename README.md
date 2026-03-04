@@ -43,6 +43,8 @@ NyayaBharat follows a decoupled architecture for scalability:
 
 ### 🖥️ Frontend
 - Streamlit (Python-based UI dashboard)
+### 🖥️ Frontend
+- React (Vite) frontend located in `frontend/`
 
 ### ⚙️ Backend
 - FastAPI (Asynchronous REST API)
@@ -75,7 +77,7 @@ You must run both the backend and frontend in separate terminals.
 ### 🖥️ Terminal 1: Backend API
 
 ```bash
-python main.py
+uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
 
 API runs at:  
@@ -86,11 +88,13 @@ http://localhost:8000
 ### 🖥️ Terminal 2: Frontend Dashboard
 
 ```bash
-streamlit run dashboard.py
+cd frontend
+npm install
+npm run dev
 ```
 
-UI runs at:  
-http://localhost:8501
+Frontend dev server runs (default Vite port):
+http://localhost:5173
 
 ---
 
