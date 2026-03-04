@@ -1,10 +1,12 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Body
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any, List
+from pydantic import BaseModel
 import uvicorn
 import uuid
-from datetime import datetime
+import boto3
+import requests
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI(title="NyayaBharat API", version="1.0.0")
 
@@ -15,16 +17,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- MODELS ---
-class VoiceComplaintRequest(BaseModel):
-    audio_url: str
-    language: str = "hi"
+class VoiceComplaintService:
+    def __init__(self):
+        self.bucket_name = "nyaya-bharat-audio"
+        self.s3_client = boto3.client("s3")
+        self.transcribe_client = boto3.client("transcribe", region_name="us-east-1")
+
+    def start_job(self, file_obj, job_name):
+        self.s3_client.upload_fileobj(file_obj, self.bucket_name, "audio.mp3")
+        
+        try:
+            self.transcribe_client.delete_transcription_job(TranscriptionJobName=job_name)
+        except:
+            pass
+
+        self.transcribe_client.start_transcription_job(
+            TranscriptionJobName=job_name,
+            Media={'MediaFileUri': f's3://{self.bucket_name}/audio.mp3'},
+            MediaFormat='mp3',
+            LanguageCode='en-US' 
+        )
+        return job_name
+
+    def check_result(self, job_name):
+        job = self.transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
+        status = job['TranscriptionJob']['TranscriptionJobStatus']
+        if status == 'COMPLETED':
+            url = job['TranscriptionJob']['Transcript']['TranscriptFileUri']
+            content = requests.get(url).json()
+            return {
+                "status": status, 
+                "transcript": content['results']['transcripts'][0]['transcript']
+            }
+            
+        return {"status": status}
 
 class LegalQueryRequest(BaseModel):
     question: str
     language: str = "hi"
 
-# --- ENDPOINTS ---
+voice_service = VoiceComplaintService()
+
 
 @app.get("/")
 async def root():
@@ -32,7 +65,6 @@ async def root():
 
 @app.post("/api/document/process", tags=["Legal Lens"])
 async def process_doc(file: UploadFile = File(...), language: str = Form("hi")):
-    # Simulation Logic
     return {
         "document_id": str(uuid.uuid4())[:8],
         "simplified_text": f"This document is a formal request regarding property rights, simplified here in {language}.",
@@ -63,14 +95,14 @@ async def legal_query(request: LegalQueryRequest):
         "response_time": 0.8
     }
 
-@app.post("/api/complaint/voice", tags=["Voice Complaint"])
-async def voice_comp(request: VoiceComplaintRequest):
-    return {
-        "tracking_id": f"NB-{uuid.uuid4().hex[:6].upper()}",
-        "status": "In-Progress",
-        "message": "Complaint filed via voice successfully.",
-        "timestamp": datetime.now().isoformat()
-    }
+@app.post("/api/complaint/voice", tags=["Voice Complaints"])
+async def handle_voice_complaint(file: UploadFile = File(...)):
+    job_name = voice_service.start_job(file.file, "SimpleTestJob")
+    return {"message": "Job started", "job_name": job_name}
+
+@app.get("/api/complaint/result", tags=["Voice Complaints"])
+async def get_result():
+    return voice_service.check_result("SimpleTestJob")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
