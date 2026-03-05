@@ -7,6 +7,7 @@ import os
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
+import requests
 
 # Import completed services
 from services.rights_chatbot import RightsChatbotService
@@ -148,33 +149,51 @@ User Question: {request.question}
 # 2. VOICE COMPLAINT  ✅ (colleague's work)
 # ===========================================================
 
-@app.post("/api/voice/complaint", tags=["Voice Complaint"])
-async def file_voice_complaint(
-    audio: UploadFile = File(..., description="Voice note (mp3/wav/ogg)"),
-    language: str = Form(default="hi"),
-    location: str = Form(default="", description="City or district of the issue")
-):
-    """
-    Accept a voice note, transcribe it, auto-draft a formal complaint,
-    and email the relevant authorities.
-    """
-    try:
-        audio_bytes = await audio.read()
-        result = await voice_complaint.process_voice_complaint(
-            audio_bytes=audio_bytes,
-            filename=audio.filename,
-            language=language,
-            location=location
+class VoiceComplaintService:
+    def __init__(self):
+        self.bucket_name = "nyaya-bharat-audio"
+        self.s3_client = boto3.client("s3")
+        self.transcribe_client = boto3.client("transcribe", region_name="us-east-1")
+
+    def start_job(self, file_obj, job_name):
+        self.s3_client.upload_fileobj(file_obj, self.bucket_name, "audio.mp3")
+        
+        try:
+            self.transcribe_client.delete_transcription_job(TranscriptionJobName=job_name)
+        except:
+            pass
+
+        self.transcribe_client.start_transcription_job(
+            TranscriptionJobName=job_name,
+            Media={'MediaFileUri': f's3://{self.bucket_name}/audio.mp3'},
+            MediaFormat='mp3',
+            LanguageCode='en-US' 
         )
-        return {
-            "status": "success",
-            "complaint_drafted": result.get("complaint"),
-            "authorities_notified": result.get("authorities", []),
-            "transcript": result.get("transcript"),
-            "response_time": datetime.now().isoformat()
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Voice Complaint Error: {str(e)}")
+        return job_name
+
+    def check_result(self, job_name):
+        job = self.transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
+        status = job['TranscriptionJob']['TranscriptionJobStatus']
+        if status == 'COMPLETED':
+            url = job['TranscriptionJob']['Transcript']['TranscriptFileUri']
+            content = requests.get(url).json()
+            return {
+                "status": status, 
+                "transcript": content['results']['transcripts'][0]['transcript']
+            }
+            
+        return {"status": status}
+voice_service = VoiceComplaintService()
+
+@app.post("/api/complaint/voice", tags=["Voice Complaints"])
+async def handle_voice_complaint(file: UploadFile = File(...)):
+    job_name = voice_service.start_job(file.file, "SimpleTestJob")
+    return {"message": "Job started", "job_name": job_name}
+
+@app.get("/api/complaint/result", tags=["Voice Complaints"])
+async def get_result():
+    return voice_service.check_result("SimpleTestJob")
+
 
 # ===========================================================
 # 3. LEGAL LENS  ✅
