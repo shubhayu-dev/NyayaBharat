@@ -6,7 +6,7 @@ import LegalLens from './components/LegalLens'
 import OfficerMode from './components/OfficerMode'
 import VoiceFiling from './components/VoiceFiling'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://44.222.167.184:8000'
 
 function Navbar() {
   return (
