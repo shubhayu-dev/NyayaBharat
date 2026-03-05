@@ -9,6 +9,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+/venv
 
 # --- Environment Variables (CRITICAL) ---
 # Never push your AWS keys or database passwords
