@@ -15,7 +15,7 @@ from services.legal_lens import legal_lens_with_nova, INDIAN_LANGUAGES
 from services.officer_mode import scan_petition_with_nova, DEPARTMENTS, INDIAN_LANGUAGES as OFFICER_LANGUAGES
 
 load_dotenv()
-
+#hi
 app = FastAPI(
     title="NyayaBharat API",
     version="1.0.0",
