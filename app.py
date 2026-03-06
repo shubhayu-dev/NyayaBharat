@@ -228,56 +228,6 @@ User Question: {request.question}
 # 2. VOICE COMPLAINT  ✅ (colleague's work)
 # ===========================================================
 
-class VoiceComplaintService:
-    def __init__(self):
-        self.bucket_name = "nyaya-bharat-audio"
-        self.s3_client = boto3.client("s3")
-        self.transcribe_client = boto3.client("transcribe", region_name="us-east-1")
-        # 1. ADD THE TRANSLATE CLIENT
-        self.translate_client = boto3.client("translate", region_name="us-east-1") 
-
-    def start_job(self, file_obj, job_name):
-        self.s3_client.upload_fileobj(file_obj, self.bucket_name, "audio.mp3")
-        
-        try:
-            self.transcribe_client.delete_transcription_job(TranscriptionJobName=job_name)
-        except:
-            pass
-
-        self.transcribe_client.start_transcription_job(
-            TranscriptionJobName=job_name,
-            Media={'MediaFileUri': f's3://{self.bucket_name}/audio.mp3'},
-            MediaFormat='mp3',
-            # 2. REMOVE LanguageCode='en-US' AND ADD AUTO-DETECTION
-            IdentifyLanguage=True 
-        )
-        return job_name
-
-    def check_result(self, job_name):
-        job = self.transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
-        status = job['TranscriptionJob']['TranscriptionJobStatus']
-        
-        if status == 'COMPLETED':
-            url = job['TranscriptionJob']['Transcript']['TranscriptFileUri']
-            content = requests.get(url).json()
-            native_transcript = content['results']['transcripts'][0]['transcript']
-            
-            # 3. TRANSLATE THE NATIVE TEXT TO ENGLISH
-            translation_response = self.translate_client.translate_text(
-                Text=native_transcript,
-                SourceLanguageCode='auto', # Let AWS figure out the source language
-                TargetLanguageCode='en'    # Output in English
-            )
-            english_transcript = translation_response['TranslatedText']
-
-            return {
-                "status": status, 
-                "native_transcript": native_transcript,
-                "english_transcript": english_transcript
-            }
-            
-        return {"status": status}
-
 @app.post("/api/complaint/voice", tags=["Voice Complaints"])
 async def handle_voice_complaint(file: UploadFile = File(...)):
     job_name = f"nyaya-{uuid.uuid4().hex[:12]}"

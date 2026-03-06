@@ -1,44 +1,57 @@
 """
 Voice_Complaint_System - Voice-based Complaint Filing
-Processes voice complaints and routes to appropriate authorities
+Processes voice complaints via AWS Transcribe + Translate
 """
-from typing import Dict, Any
+import boto3
+import requests
 import uuid
-from datetime import datetime
+
 
 class VoiceComplaintService:
     def __init__(self):
-        self.complaint_types = ["municipal", "cybercrime", "public_service"]
-        self.departments = {
-            "water": "water@municipal.gov.in",
-            "roads": "roads@municipal.gov.in",
-            "electricity": "electricity@municipal.gov.in"
-        }
-    
-    async def process_voice_complaint(self, audio_url: str, language: str = "hi") -> Dict[str, Any]:
-        """Process voice complaint and generate tracking ID"""
-        tracking_id = f"NYC-{uuid.uuid4().hex[:8].upper()}"
-        
-        return {
-            "tracking_id": tracking_id,
-            "complaint_type": "municipal",
-            "category": "roads",
-            "transcribed_text": "Sample transcribed complaint",
-            "location": "Sample Location",
-            "status": "submitted",
-            "department_email": "roads@municipal.gov.in",
-            "timestamp": datetime.now().isoformat()
-        }
-    
-    async def transcribe_audio(self, audio_url: str) -> str:
-        """Convert speech to text"""
-        # Placeholder for Amazon Transcribe integration
-        return "Transcribed text from audio"
-    
-    async def categorize_complaint(self, text: str) -> Dict[str, str]:
-        """Categorize complaint and identify department"""
-        return {
-            "type": "municipal",
-            "category": "roads",
-            "department": "roads@municipal.gov.in"
-        }
+        self.bucket_name = "nyaya-bharat-audio"
+        self.s3_client = boto3.client("s3")
+        self.transcribe_client = boto3.client("transcribe", region_name="us-east-1")
+        self.translate_client = boto3.client("translate", region_name="us-east-1")
+
+    def start_job(self, file_obj, job_name):
+        # Unique S3 key per user — no overwriting
+        s3_key = f"audio/{job_name}.mp3"
+        self.s3_client.upload_fileobj(file_obj, self.bucket_name, s3_key)
+
+        try:
+            self.transcribe_client.delete_transcription_job(TranscriptionJobName=job_name)
+        except:
+            pass
+
+        self.transcribe_client.start_transcription_job(
+            TranscriptionJobName=job_name,
+            Media={'MediaFileUri': f's3://{self.bucket_name}/{s3_key}'},
+            MediaFormat='mp3',
+            IdentifyLanguage=True
+        )
+        return job_name
+
+    def check_result(self, job_name):
+        job = self.transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
+        status = job['TranscriptionJob']['TranscriptionJobStatus']
+
+        if status == 'COMPLETED':
+            url = job['TranscriptionJob']['Transcript']['TranscriptFileUri']
+            content = requests.get(url).json()
+            native_transcript = content['results']['transcripts'][0]['transcript']
+
+            translation_response = self.translate_client.translate_text(
+                Text=native_transcript,
+                SourceLanguageCode='auto',
+                TargetLanguageCode='en'
+            )
+            english_transcript = translation_response['TranslatedText']
+
+            return {
+                "status": status,
+                "native_transcript": native_transcript,
+                "english_transcript": english_transcript
+            }
+
+        return {"status": status}
