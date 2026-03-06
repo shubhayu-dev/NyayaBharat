@@ -25,10 +25,10 @@ function Navbar() {
       </NavLink>
       <div style={{ display: 'flex', gap: 8 }}>
         {[
-          { to: '/rights',   label: '🤖 Rights Bot' },
-          { to: '/document', label: '🔍 Legal Lens' },
-          { to: '/officer',  label: '👮 Officer Mode' },
-          { to: '/voice',    label: '🎤 Voice Filing' },
+          { to: '/rights',   label: 'Rights Bot' },
+          { to: '/document', label: 'Legal Lens' },
+          { to: '/officer',  label: 'Officer Mode' },
+          { to: '/voice',    label: 'Voice Filing' },
         ].map(({ to, label }) => (
           <NavLink
             key={to}

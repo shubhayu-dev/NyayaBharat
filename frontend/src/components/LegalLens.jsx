@@ -1,24 +1,335 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 
-export default function LegalLens({ apiBase }) {
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  .ll-overlay {
+    position: fixed;
+    top: 53px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: flex-start;
+    justify-content: stretch;
+    z-index: 99;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .ll-panel {
+    background: #120820;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ll-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* Header */
+  .ll-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+
+  .ll-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .ll-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #5b21b6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .ll-header-text h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .ll-header-text span {
+    font-size: 12px;
+    color: #6d28d9;
+    font-weight: 500;
+  }
+
+  .ll-close {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+  .ll-close:hover { color: #fff; }
+
+  /* Body */
+  .ll-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+  .ll-body::-webkit-scrollbar { width: 4px; }
+  .ll-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+  .ll-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* Upload zone */
+  .ll-upload-zone {
+    background: rgba(255,255,255,0.04);
+    border: 2px dashed rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    text-align: center;
+  }
+  .ll-upload-zone:hover, .ll-upload-zone.drag {
+    border-color: rgba(139,92,246,0.5);
+    background: rgba(91,33,182,0.08);
+  }
+  .ll-upload-zone.has-file {
+    border-color: rgba(139,92,246,0.4);
+    background: rgba(91,33,182,0.1);
+  }
+
+  .ll-upload-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(91,33,182,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ll-upload-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e5e7eb;
+    margin: 0;
+  }
+
+  .ll-upload-sub {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .ll-preview {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-top: 4px;
+  }
+
+  /* Lang row */
+  .ll-controls-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .ll-select-group {
+    flex: 1;
+    min-width: 160px;
+  }
+
+  .ll-select {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    transition: border-color 0.2s;
+  }
+  .ll-select:focus { border-color: rgba(139,92,246,0.5); }
+  .ll-select option { background: #1e1030; }
+
+  /* Submit */
+  .ll-submit-btn {
+    flex: 1;
+    min-width: 160px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: #5b21b6;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s, opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .ll-submit-btn:hover { background: #6d28d9; }
+  .ll-submit-btn:active { transform: scale(0.99); }
+  .ll-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .ll-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: ll-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes ll-spin { to { transform: rotate(360deg); } }
+
+  /* Results */
+  .ll-success-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16,185,129,0.15);
+    color: #34d399;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .ll-result-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .ll-result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .ll-result-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #a78bfa;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .ll-result-lang {
+    font-size: 11px;
+    color: #4b5563;
+  }
+
+  .ll-result-body {
+    padding: 16px 18px;
+    font-size: 14px;
+    color: #d1d5db;
+    white-space: pre-wrap;
+    line-height: 1.8;
+  }
+
+  .ll-copy-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #a78bfa;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .ll-copy-btn:hover { background: rgba(91,33,182,0.2); }
+
+  .ll-error {
+    background: rgba(220,38,38,0.1);
+    border: 1px solid rgba(220,38,38,0.2);
+    color: #f87171;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+  }
+`
+
+export default function LegalLens({ apiBase = '', onClose }) {
   const [file, setFile] = useState(null)
+  const [preview, setPreview] = useState(null)
   const [lang, setLang] = useState('hi')
   const [res, setRes] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [drag, setDrag] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const fileRef = useRef()
+
+  function pickFile(f) {
+    if (!f) return
+    setFile(f)
+    setRes(null)
+    setPreview(URL.createObjectURL(f))
+  }
 
   async function upload() {
     if (!file) return
     setLoading(true)
     const fd = new FormData()
-    fd.append('image', file)        // ← was 'file', backend expects 'image'
+    fd.append('image', file)
     fd.append('language', lang)
     try {
-      const r = await fetch(`${apiBase}/api/legal-lens/analyze`, {  // ← fixed route
-        method: 'POST',
-        body: fd
-      })
-      const j = await r.json()
-      setRes(j)
+      const r = await fetch(`${apiBase}/api/legal-lens/analyze`, { method: 'POST', body: fd })
+      setRes(await r.json())
     } catch (e) {
       setRes({ error: e.message })
     } finally {
@@ -26,42 +337,149 @@ export default function LegalLens({ apiBase }) {
     }
   }
 
+  function copy() {
+    if (!res?.analysis) return
+    navigator.clipboard.writeText(res.analysis)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
-    <div className="service-card">
-      <h3>🔍 Legal Lens: Document Simplifier</h3>
-      <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setFile(e.target.files?.[0])} />
-      <div style={{ marginTop: 8 }}>
-        <select value={lang} onChange={e => setLang(e.target.value)}>
-          <option value="en">English</option>
-          <option value="hi">Hindi</option>
-          <option value="bn">Bengali</option>
-          <option value="te">Telugu</option>
-          <option value="mr">Marathi</option>
-          <option value="ta">Tamil</option>
-          <option value="gu">Gujarati</option>
-          <option value="kn">Kannada</option>
-          <option value="ml">Malayalam</option>
-          <option value="pa">Punjabi</option>
-          <option value="or">Odia</option>
-          <option value="as">Assamese</option>
-          <option value="ur">Urdu</option>
-        </select>
-        <button className="button" onClick={upload} style={{ marginLeft: 8 }} disabled={!file || loading}>
-          {loading ? 'Processing...' : 'Simplify'}
-        </button>
-      </div>
-      {res && (
-        <div style={{ marginTop: 12 }}>
-          {res.error ? (
-            <div style={{ color: 'red' }}>{res.error}</div>
-          ) : (
-            <>
-              <h4>Analysis ({res.language})</h4>
-              <div style={{ whiteSpace: 'pre-wrap' }}>{res.analysis}</div>  {/* ← was res.simplified_text */}
-            </>
-          )}
+    <>
+      <style>{styles}</style>
+      <div className="ll-overlay" onClick={e => e.target === e.currentTarget && onClose?.()}>
+        <div className="ll-panel">
+          <div className="ll-inner">
+
+            {/* Header */}
+            <div className="ll-header">
+              <div className="ll-header-left">
+                <div className="ll-avatar">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    <line x1="11" y1="8" x2="11" y2="14"/>
+                    <line x1="8" y1="11" x2="14" y2="11"/>
+                  </svg>
+                </div>
+                <div className="ll-header-text">
+                  <h3>Legal Lens</h3>
+                  <span>Document simplifier · Plain-language analysis</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="ll-body">
+
+              {/* Upload */}
+              <div>
+                <div className="ll-label">Upload Legal Document</div>
+                <div
+                  className={`ll-upload-zone${drag ? ' drag' : ''}${file ? ' has-file' : ''}`}
+                  onClick={() => fileRef.current.click()}
+                  onDragOver={e => { e.preventDefault(); setDrag(true) }}
+                  onDragLeave={() => setDrag(false)}
+                  onDrop={e => { e.preventDefault(); setDrag(false); pickFile(e.dataTransfer.files?.[0]) }}
+                >
+                  {preview ? (
+                    <>
+                      <img src={preview} className="ll-preview" alt="Preview" />
+                      <p className="ll-upload-sub">{file.name} · Click to change</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="ll-upload-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                      </div>
+                      <p className="ll-upload-title">Drop document image here or click to browse</p>
+                      <p className="ll-upload-sub">Supports JPG, PNG, WEBP · Contracts, notices, court orders</p>
+                    </>
+                  )}
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={e => pickFile(e.target.files?.[0])}
+                  />
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="ll-controls-row">
+                <div className="ll-select-group">
+                  <div className="ll-label">Output Language</div>
+                  <select className="ll-select" value={lang} onChange={e => setLang(e.target.value)}>
+                    <option value="en">English</option>
+                    <option value="hi">Hindi</option>
+                    <option value="bn">Bengali</option>
+                    <option value="te">Telugu</option>
+                    <option value="mr">Marathi</option>
+                    <option value="ta">Tamil</option>
+                    <option value="gu">Gujarati</option>
+                    <option value="kn">Kannada</option>
+                    <option value="ml">Malayalam</option>
+                    <option value="pa">Punjabi</option>
+                    <option value="or">Odia</option>
+                    <option value="as">Assamese</option>
+                    <option value="ur">Urdu</option>
+                  </select>
+                </div>
+                <button className="ll-submit-btn" onClick={upload} disabled={!file || loading}>
+                  {loading
+                    ? <><div className="ll-spinner" /> Analyzing…</>
+                    : <>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        Simplify Document
+                      </>
+                  }
+                </button>
+              </div>
+
+              {/* Result */}
+              {res && (
+                res.error ? (
+                  <div className="ll-error">⚠ {res.error}</div>
+                ) : (
+                  <>
+                    <div className="ll-success-tag">✓ Analysis Complete</div>
+                    <div className="ll-result-card">
+                      <div className="ll-result-header">
+                        <div className="ll-result-title">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                          Plain-Language Analysis
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          {res.language && <span className="ll-result-lang">{res.language}</span>}
+                          <button className="ll-copy-btn" onClick={copy}>
+                            {copied ? '✓ Copied' : 'Copy'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="ll-result-body">{res.analysis}</div>
+                    </div>
+                  </>
+                )
+              )}
+
+            </div>
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   )
 }
