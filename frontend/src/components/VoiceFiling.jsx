@@ -5,13 +5,13 @@ export default function VoiceFiling({ apiBase }) {
   const [res, setRes] = useState(null)
   const [loading, setLoading] = useState(false)
   const [polling, setPolling] = useState(false)
-  const [view, setView] = useState('native')
+  const [view, setView] = useState('complaint') // 'complaint' | 'native' | 'english'
 
   async function process() {
     if (!file) return
     setLoading(true)
     setRes(null)
-    setView('native')
+    setView('complaint')
     const fd = new FormData()
     fd.append('file', file)
     try {
@@ -22,7 +22,7 @@ export default function VoiceFiling({ apiBase }) {
       const j = await r.json()
       if (j.job_name) {
         setRes({ status: 'processing', message: 'Transcription started...' })
-        pollResult(j.job_name)    // ← pass unique job_name
+        pollResult(j.job_name)
       } else {
         setRes({ error: j.detail || 'Unknown error' })
       }
@@ -37,7 +37,6 @@ export default function VoiceFiling({ apiBase }) {
     setPolling(true)
     const interval = setInterval(async () => {
       try {
-        // ← use job-specific route
         const r = await fetch(`${apiBase}/api/complaint/result/${jobName}`)
         const j = await r.json()
         if (j.status === 'COMPLETED') {
@@ -70,6 +69,11 @@ export default function VoiceFiling({ apiBase }) {
     fontSize: 13,
   })
 
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+    alert('Copied to clipboard!')
+  }
+
   return (
     <div className="service-card">
       <h3>🎤 Voice Complaint Filing</h3>
@@ -84,7 +88,7 @@ export default function VoiceFiling({ apiBase }) {
           onClick={process}
           disabled={!file || loading || polling}
         >
-          {loading ? 'Uploading...' : polling ? 'Transcribing...' : 'File Complaint'}
+          {loading ? 'Uploading...' : polling ? 'Processing...' : 'File Complaint'}
         </button>
       </div>
 
@@ -96,20 +100,47 @@ export default function VoiceFiling({ apiBase }) {
             <div style={{ color: '#888' }}>⏳ {res.message}</div>
           ) : (
             <>
-              <div style={{ color: 'green', marginBottom: 12 }}>✅ Transcription Complete</div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <div style={{ color: 'green', marginBottom: 12 }}>✅ Complaint Ready</div>
+
+              {/* Tabs */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                <button style={tabStyle(view === 'complaint')} onClick={() => setView('complaint')}>
+                  📄 Formal Complaint
+                </button>
                 <button style={tabStyle(view === 'native')} onClick={() => setView('native')}>
-                  🌐 Original Language
+                  🌐 Original
                 </button>
                 <button style={tabStyle(view === 'english')} onClick={() => setView('english')}>
-                  🇬🇧 English Translation
+                  🇬🇧 English
                 </button>
               </div>
+
+              {/* Formal Complaint */}
+              {view === 'complaint' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, color: '#666' }}>AI-formatted legal complaint</span>
+                    <button
+                      onClick={() => copyToClipboard(res.formal_complaint)}
+                      style={{ fontSize: 12, padding: '4px 10px', borderRadius: 4, border: '1px solid #ccc', cursor: 'pointer', background: '#fff' }}
+                    >
+                      📋 Copy
+                    </button>
+                  </div>
+                  <div style={{ background: '#f0f4ff', padding: 12, whiteSpace: 'pre-wrap', borderRadius: 8, lineHeight: 1.8, fontSize: 14, border: '1px solid #d0d9ff' }}>
+                    {res.formal_complaint}
+                  </div>
+                </div>
+              )}
+
+              {/* Native transcript */}
               {view === 'native' && (
                 <div style={{ background: '#f4f5f7', padding: 12, whiteSpace: 'pre-wrap', borderRadius: 8, lineHeight: 1.7 }}>
                   {res.native_transcript || 'No native transcript available.'}
                 </div>
               )}
+
+              {/* English translation */}
               {view === 'english' && (
                 <div style={{ background: '#f4f5f7', padding: 12, whiteSpace: 'pre-wrap', borderRadius: 8, lineHeight: 1.7 }}>
                   {res.english_transcript || 'No English translation available.'}
