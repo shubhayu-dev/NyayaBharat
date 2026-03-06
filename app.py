@@ -7,6 +7,8 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 import requests
+from fastapi.responses import StreamingResponse
+import json
 
 # Import completed services
 from services.rights_chatbot import RightsChatbotService
@@ -47,6 +49,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # ===========================================================
@@ -141,6 +144,84 @@ User Question: {request.question}
         "language": request.language,
         "response_time": datetime.now().isoformat()
     }
+
+
+# ===========================================================
+# 1b. RIGHTS CHATBOT — STREAMING  ✅
+# ===========================================================
+
+@app.post("/api/rights/stream", tags=["Rights Chatbot"])
+async def legal_query_stream(request: LegalQueryRequest):
+    """
+    Streaming version of the rights chatbot.
+    Returns Server-Sent Events (SSE) — chunks arrive word by word.
+    """
+    if not KNOWLEDGE_BASE_ID:
+        raise HTTPException(status_code=500, detail="Missing AWS_KB_ID in environment.")
+
+    # STEP 1: Retrieve from Knowledge Base
+    try:
+        kb_response = bedrock_agent_runtime.retrieve(
+            retrievalQuery={'text': request.question},
+            knowledgeBaseId=KNOWLEDGE_BASE_ID,
+            retrievalConfiguration={'vectorSearchConfiguration': {'numberOfResults': 5}}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Knowledge Base Retrieval Error: {str(e)}")
+
+    retrieved_context = ""
+    citations = []
+    for result in kb_response.get('retrievalResults', []):
+        text_snippet = result['content']['text']
+        source_uri = result.get('location', {}).get('s3Location', {}).get('uri', "Legal Document")
+        retrieved_context += f"\n---\n{text_snippet}\n"
+        citations.append({"text": text_snippet, "source": source_uri})
+
+    if not citations:
+        async def empty():
+            yield f"data: {json.dumps({'type': 'done', 'answer': 'No relevant legal documents found.', 'citations': []})}\n\n"
+        return StreamingResponse(empty(), media_type="text/event-stream")
+
+    prompt = f"""You are NyayaBharat, an expert in Indian Law.
+Use the following legal context to answer the user's question in {request.language}.
+
+Context:
+{retrieved_context}
+
+User Question: {request.question}
+"""
+
+    async def stream_response():
+        try:
+            # First send citations immediately so UI can show them
+            yield f"data: {json.dumps({'type': 'citations', 'citations': citations})}\n\n"
+
+            # Stream the answer token by token
+            response = bedrock_runtime.converse_stream(
+                modelId=MODEL_ID,
+                messages=[{"role": "user", "content": [{"text": prompt}]}]
+            )
+
+            for event in response['stream']:
+                if 'contentBlockDelta' in event:
+                    delta = event['contentBlockDelta'].get('delta', {})
+                    if 'text' in delta:
+                        yield f"data: {json.dumps({'type': 'chunk', 'text': delta['text']})}\n\n"
+
+            # Signal stream is done
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+
+    return StreamingResponse(
+        stream_response(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",   # important for nginx proxies
+        }
+    )
 
 # ===========================================================
 # 2. VOICE COMPLAINT  ✅ (colleague's work)
