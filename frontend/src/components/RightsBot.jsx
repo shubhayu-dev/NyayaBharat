@@ -163,6 +163,35 @@ const styles = `
   .rb-send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 `
 
+// Simple markdown renderer: handles ###, **bold**, - bullets
+function renderMarkdown(text) {
+  if (!text) return null
+  return text.split('\n').map((line, i) => {
+    // Headings
+    if (line.startsWith('#### ')) return <div key={i} style={{ fontWeight: 700, fontSize: 13, color: '#c4b5fd', marginTop: 8 }}>{line.slice(5)}</div>
+    if (line.startsWith('### ')) return <div key={i} style={{ fontWeight: 700, fontSize: 14, color: '#a78bfa', marginTop: 10 }}>{line.slice(4)}</div>
+    if (line.startsWith('## ')) return <div key={i} style={{ fontWeight: 700, fontSize: 15, color: '#8b5cf6', marginTop: 12 }}>{line.slice(3)}</div>
+    // Bullet
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      return <div key={i} style={{ paddingLeft: 12, marginTop: 2 }}>• {formatInline(line.slice(2))}</div>
+    }
+    // Numbered list
+    if (/^\d+\.\s/.test(line)) {
+      return <div key={i} style={{ paddingLeft: 12, marginTop: 2 }}>{formatInline(line)}</div>
+    }
+    // Empty line
+    if (line.trim() === '') return <div key={i} style={{ height: 6 }} />
+    // Normal
+    return <div key={i} style={{ marginTop: 2 }}>{formatInline(line)}</div>
+  })
+}
+
+function formatInline(text) {
+  // Bold: **text**
+  const parts = text.split(/\*\*(.*?)\*\*/g)
+  return parts.map((p, i) => i % 2 === 1 ? <strong key={i} style={{ color: '#e5e7eb' }}>{p}</strong> : p)
+}
+
 const SUGGESTIONS = [
   'What are my rights if arrested?',
   'How do I file an RTI?',
@@ -195,7 +224,7 @@ export default function RightsBot({ apiBase = '', onClose }) {
     setMessages(prev => [...prev, { role: 'bot', text: '', citations: [], streaming: true, id: botIdx }])
 
     try {
-      const r = await fetch(`${apiBase}/api/rights/query`, {
+      const r = await fetch(`${apiBase}/api/rights/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: text, language: lang })
@@ -204,60 +233,53 @@ export default function RightsBot({ apiBase = '', onClose }) {
       setLoading(false)
       setStreaming(true)
 
-      // Try streaming (SSE / chunked text), fall back to full JSON
-      const contentType = r.headers.get('content-type') || ''
+      const reader = r.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let accumulated = ''
+      let citations = []
 
-      if (contentType.includes('text/event-stream') || contentType.includes('text/plain')) {
-        // Stream character by character from reader
-        const reader = r.body.getReader()
-        const decoder = new TextDecoder()
-        let accumulated = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop()
 
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          const chunk = decoder.decode(value, { stream: true })
-          // Handle SSE "data: ..." lines or raw text
-          const lines = chunk.split('\n')
-          for (const line of lines) {
-            let token = line
-            if (line.startsWith('data: ')) token = line.slice(6)
-            if (token === '[DONE]' || token === '') continue
-            // Try JSON token (OpenAI style), else use raw
-            try {
-              const parsed = JSON.parse(token)
-              token = parsed.delta ?? parsed.text ?? parsed.answer ?? token
-            } catch {}
-            accumulated += token
-            const snap = accumulated
-            setMessages(prev => prev.map(m =>
-              m.id === botIdx ? { ...m, text: snap } : m
-            ))
-          }
-        }
-      } else {
-        // Non-streaming: get full JSON then animate it
-        const j = await r.json()
-        const fullText = j.answer ?? j.text ?? ''
-        const citations = j.citations ?? []
-
-        // Animate character by character
-        let i = 0
-        await new Promise(resolve => {
-          const tick = () => {
-            i += Math.ceil(fullText.length / 120) // speed: finish in ~120 ticks
-            const snap = fullText.slice(0, i)
-            setMessages(prev => prev.map(m =>
-              m.id === botIdx ? { ...m, text: snap, citations } : m
-            ))
-            if (i < fullText.length) {
-              requestAnimationFrame(tick)
-            } else {
-              resolve()
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const raw = line.slice(6).trim()
+          if (!raw) continue
+          try {
+            const event = JSON.parse(raw)
+            if (event.type === 'citations') {
+              citations = event.citations
+              const relevanceScore = event.relevance_score
+              const fromCache = event.from_cache
+              const similarity = event.similarity
+              const modelUsed = fromCache
+                ? `💾 Cached (${similarity}% match)`
+                : event.model_used?.includes('pro') ? '⚡ Nova Pro' : '🔹 Nova Lite'
+              setMessages(prev => prev.map(m =>
+                m.id === botIdx ? { ...m, citations, relevanceScore, modelUsed, fromCache } : m
+              ))
+            } else if (event.type === 'chunk') {
+              accumulated += event.text
+              const snap = accumulated
+              setMessages(prev => prev.map(m =>
+                m.id === botIdx ? { ...m, text: snap } : m
+              ))
+            } else if (event.type === 'ragas') {
+              setMessages(prev => prev.map(m =>
+                m.id === botIdx ? { ...m, ragas: event } : m
+              ))
+            } else if (event.type === 'done') {
+              // stream finished
+            } else if (event.type === 'error') {
+              throw new Error(event.message)
             }
-          }
-          requestAnimationFrame(tick)
-        })
+          } catch {}
+        }
       }
 
       // Mark streaming done
@@ -360,17 +382,76 @@ export default function RightsBot({ apiBase = '', onClose }) {
                             /* waiting for first byte: show bouncing dots */
                             ? <div className="rb-typing"><div className="rb-dot"/><div className="rb-dot"/><div className="rb-dot"/></div>
                             : <>
-                                {m.text}
+                                {m.streaming ? m.text : renderMarkdown(m.text)}
                                 {/* blinking cursor while streaming */}
                                 {m.streaming && m.text !== '' && <span className="rb-cursor" />}
                               </>
                         }
+                        {!m.streaming && m.ragas && (
+                          <div style={{
+                            marginTop: 10, padding: '10px 12px', borderRadius: 10,
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.08)'
+                          }}>
+                            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6, fontWeight: 600, letterSpacing: '0.05em' }}>
+                              RAGAS EVALUATION
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                              {[
+                                { label: 'Faithfulness', val: m.ragas.faithfulness },
+                                { label: 'Relevance', val: m.ragas.answer_relevance },
+                                { label: 'Precision', val: m.ragas.context_precision },
+                              ].map(({ label, val }) => (
+                                <div key={label} style={{ flex: 1, minWidth: 80, textAlign: 'center' }}>
+                                  <div style={{
+                                    fontSize: 16, fontWeight: 700,
+                                    color: val >= 0.8 ? '#34d399' : val >= 0.6 ? '#fbbf24' : '#f87171'
+                                  }}>{Math.round(val * 100)}%</div>
+                                  <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>{label}</div>
+                                </div>
+                              ))}
+                              <div style={{ flex: 1, minWidth: 80, textAlign: 'center' }}>
+                                <div style={{
+                                  fontSize: 16, fontWeight: 700,
+                                  color: m.ragas.overall >= 0.8 ? '#34d399' : m.ragas.overall >= 0.6 ? '#fbbf24' : '#f87171'
+                                }}>{Math.round(m.ragas.overall * 100)}%</div>
+                                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>Overall</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         {!m.streaming && m.citations?.length > 0 && (
                           <div className="rb-citations">
+                            {m.relevanceScore !== undefined && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                <div style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                                  padding: '3px 8px', borderRadius: 12,
+                                  background: m.relevanceScore >= 0.7 ? 'rgba(16,185,129,0.15)' :
+                                              m.relevanceScore >= 0.4 ? 'rgba(245,158,11,0.15)' :
+                                              'rgba(239,68,68,0.15)',
+                                  color: m.relevanceScore >= 0.7 ? '#34d399' :
+                                         m.relevanceScore >= 0.4 ? '#fbbf24' : '#f87171',
+                                  fontSize: 11, fontWeight: 600
+                                }}>
+                                  ◉ Relevance: {Math.round(m.relevanceScore * 100)}%
+                                </div>
+                                {m.modelUsed && (
+                                  <div style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                                    padding: '3px 8px', borderRadius: 12,
+                                    background: 'rgba(139,92,246,0.15)',
+                                    color: '#a78bfa', fontSize: 11, fontWeight: 600
+                                  }}>
+                                    {m.modelUsed}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             {m.citations.map((c, ci) => (
                               <div key={ci} className="rb-citation">
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                                {c.source}
+                                {c.source?.replace('s3://', '').split('/').pop()}
                               </div>
                             ))}
                           </div>

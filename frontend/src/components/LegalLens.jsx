@@ -304,6 +304,25 @@ const styles = `
   }
 `
 
+function renderLegalMarkdown(text) {
+  if (!text) return null
+  return text.split('\n').map((line, i) => {
+    if (line.startsWith('**') && line.endsWith('**'))
+      return <div key={i} style={{ fontWeight: 700, color: '#a78bfa', marginTop: 12, marginBottom: 4 }}>{line.replace(/\*\*/g, '')}</div>
+    if (line.match(/^\*\*.*\*\*$/))
+      return <div key={i} style={{ fontWeight: 700, color: '#a78bfa', marginTop: 12, marginBottom: 4 }}>{line.replace(/\*\*/g, '')}</div>
+    if (/^\d+\./.test(line))
+      return <div key={i} style={{ paddingLeft: 14, marginTop: 4, color: '#e5e7eb' }}>{formatBold(line)}</div>
+    if (line.trim() === '')
+      return <div key={i} style={{ height: 6 }} />
+    return <div key={i} style={{ marginTop: 2, color: '#d1d5db' }}>{formatBold(line)}</div>
+  })
+}
+function formatBold(text) {
+  const parts = text.split(/\*\*(.*?)\*\*/g)
+  return parts.map((p, i) => i % 2 === 1 ? <strong key={i} style={{ color: '#e5e7eb' }}>{p}</strong> : p)
+}
+
 export default function LegalLens({ apiBase = '', onClose, result, setResult }) {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
@@ -467,12 +486,15 @@ export default function LegalLens({ apiBase = '', onClose, result, setResult }) 
                         </div>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                           {res.language && <span className="ll-result-lang">{res.language}</span>}
+                          {res.model && <span className="ll-result-lang" style={{color: '#6d28d9'}}>
+                            {res.model.includes('pro') ? '⚡ Nova Pro' : '🔹 Nova Lite'}
+                          </span>}
                           <button className="ll-copy-btn" onClick={copy}>
                             {copied ? '✓ Copied' : 'Copy'}
                           </button>
                         </div>
                       </div>
-                      <div className="ll-result-body">{res.analysis}</div>
+                      <div className="ll-result-body" style={{whiteSpace: "normal"}}>{renderLegalMarkdown(res.analysis)}</div>
                     </div>
                   </>
                 )

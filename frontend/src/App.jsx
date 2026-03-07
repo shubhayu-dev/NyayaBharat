@@ -7,7 +7,9 @@ import OfficerMode from './components/OfficerMode'
 import VoiceFiling from './components/VoiceFiling'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://nyayabharat.saturnapi.in'
-const TTL_MS = 2 * 24 * 60 * 60 * 1000 // 2 days
+const TTL_MS = 2 * 24 * 60 * 60 * 1000
+
+const NAVBAR_H = 53
 
 function lsSave(key, value) {
   try { localStorage.setItem(key, JSON.stringify({ value, savedAt: Date.now() })) } catch {}
@@ -28,11 +30,14 @@ function Navbar() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '12px 24px',
+      padding: '0 24px',
+      height: NAVBAR_H,
       background: '#1a1a2e',
       position: 'sticky',
       top: 0,
       zIndex: 100,
+      flexShrink: 0,
+      boxSizing: 'border-box',
     }}>
       <NavLink to="/" style={{ fontSize: 20, fontWeight: 700, color: '#fff', textDecoration: 'none' }}>
         NyayaBharat
@@ -85,6 +90,12 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <style>{`
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #120820; }
+        #root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .content { flex: 1; overflow: hidden; position: relative; }
+      `}</style>
       <Navbar />
       <div className="content">
         <Routes>

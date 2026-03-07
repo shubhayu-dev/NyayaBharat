@@ -381,10 +381,13 @@ export default function OfficerMode({ apiBase = '', onClose, result, setResult }
     setPreview(URL.createObjectURL(f))
   }
 
+  const [step, setStep] = useState('')
+
   async function scan() {
     if (!file) return
     setLoading(true)
     setRes(null)
+    setStep('📸 Reading handwriting...')
     const fd = new FormData()
     fd.append('image', file)
     fd.append('department', department)

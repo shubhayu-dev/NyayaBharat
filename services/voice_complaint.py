@@ -1,11 +1,13 @@
 """
 Voice_Complaint_System - Voice-based Complaint Filing
-Processes voice complaints via AWS Transcribe + Translate + Nova
+Processes voice complaints via AWS Transcribe + Translate + Nova (with Llama fallback)
 """
 import boto3
 import requests
 import json
 
+MODEL_ID          = "amazon.nova-lite-v1:0"
+FALLBACK_MODEL_ID = "meta.llama3-3-70b-instruct-v1:0"
 
 COMPLAINT_PROMPT = """You are NyayaBharat, an AI legal assistant for Indian citizens.
 
@@ -42,15 +44,12 @@ class VoiceComplaintService:
         self.bedrock_client = boto3.client("bedrock-runtime", region_name="us-east-1")
 
     def start_job(self, file_obj, job_name):
-        # Unique S3 key per user — no overwriting
         s3_key = f"audio/{job_name}.mp3"
         self.s3_client.upload_fileobj(file_obj, self.bucket_name, s3_key)
-
         try:
             self.transcribe_client.delete_transcription_job(TranscriptionJobName=job_name)
         except:
             pass
-
         self.transcribe_client.start_transcription_job(
             TranscriptionJobName=job_name,
             Media={'MediaFileUri': f's3://{self.bucket_name}/{s3_key}'},
@@ -58,6 +57,20 @@ class VoiceComplaintService:
             IdentifyLanguage=True
         )
         return job_name
+
+    def _generate_complaint(self, prompt):
+        """Try Nova first, fall back to Llama if it fails."""
+        for model_id in [MODEL_ID, FALLBACK_MODEL_ID]:
+            try:
+                response = self.bedrock_client.converse(
+                    modelId=model_id,
+                    messages=[{"role": "user", "content": [{"text": prompt}]}],
+                    inferenceConfig={"temperature": 0.2, "maxTokens": 1000}
+                )
+                return response["output"]["message"]["content"][0]["text"]
+            except Exception:
+                if model_id == FALLBACK_MODEL_ID:
+                    raise
 
     def check_result(self, job_name):
         job = self.transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
@@ -77,17 +90,12 @@ class VoiceComplaintService:
             )
             english_transcript = translation_response['TranslatedText']
 
-            # Step 3: Format as formal legal complaint using Nova
+            # Step 3: Format as formal legal complaint (Nova → Llama fallback)
             prompt = COMPLAINT_PROMPT.format(
                 native_transcript=native_transcript,
                 english_transcript=english_transcript
             )
-            nova_response = self.bedrock_client.converse(
-                modelId="amazon.nova-lite-v1:0",
-                messages=[{"role": "user", "content": [{"text": prompt}]}],
-                inferenceConfig={"temperature": 0.2, "maxTokens": 1000}
-            )
-            formal_complaint = nova_response["output"]["message"]["content"][0]["text"]
+            formal_complaint = self._generate_complaint(prompt)
 
             return {
                 "status": status,
