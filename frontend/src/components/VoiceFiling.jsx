@@ -4,31 +4,21 @@ const styles = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
   .vf-overlay {
-    display: contents;
+    position: fixed;
+    top: 53px; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: flex-start; justify-content: stretch;
+    z-index: 99; font-family: 'DM Sans', sans-serif;
   }
-  .vf-panel {
-    background: #120820;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    font-family: 'DM Sans', sans-serif;
-  }
+  .vf-panel { background: #120820; width: 100%; height: 100%; display: flex; flex-direction: column; }
   .vf-inner {
-    max-width: 720px;
-    margin: 0 auto;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
+    max-width: 720px; margin: 0 auto; width: 100%;
+    display: flex; flex-direction: column; height: 100%;
   }
   .vf-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 20px 32px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0;
   }
   .vf-header-left { display: flex; align-items: center; gap: 12px; }
   .vf-avatar {
@@ -40,16 +30,9 @@ const styles = `
   .vf-close { background: none; border: none; color: #aaa; font-size: 18px; cursor: pointer; padding: 0; }
   .vf-close:hover { color: #fff; }
   .vf-body {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 28px 32px 60px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.1) transparent;
-    -webkit-overflow-scrolling: touch;
+    flex: 1; overflow-y: auto; padding: 28px 32px 60px;
+    display: flex; flex-direction: column; gap: 20px;
+    scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
   }
   .vf-body::-webkit-scrollbar { width: 4px; }
   .vf-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
@@ -71,7 +54,7 @@ const styles = `
     background: #5b21b6; color: #fff; font-size: 15px; font-weight: 700;
     font-family: 'DM Sans', sans-serif; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: background 0.2s, opacity 0.2s; flex-shrink: 0;
+    transition: background 0.2s, opacity 0.2s;
   }
   .vf-submit-btn:hover { background: #6d28d9; }
   .vf-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -133,13 +116,6 @@ export default function VoiceFiling({ apiBase, onClose, result, setResult }) {
   const [currentStep, setCurrentStep] = useState(0)
   const [copied, setCopied] = useState(false)
   const fileRef = React.useRef()
-  const bodyRef = React.useRef()
-
-  React.useEffect(() => {
-    if (bodyRef.current) {
-      bodyRef.current.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' })
-    }
-  }, [result, currentStep])
 
   const res = result
   const setRes = setResult
@@ -204,6 +180,21 @@ export default function VoiceFiling({ apiBase, onClose, result, setResult }) {
     }, 3000)
   }
 
+  function shareWhatsApp() {
+    if (!res?.formal_complaint) return
+    const text = encodeURIComponent(
+      'NyayaBharat - Formal Legal Complaint\n\n' + res.formal_complaint
+    )
+    window.open(`https://wa.me/?text=${text}`, '_blank')
+  }
+
+  function shareEmail() {
+    if (!res?.formal_complaint) return
+    const subject = encodeURIComponent('Formal Legal Complaint - NyayaBharat')
+    const body = encodeURIComponent(res.formal_complaint)
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank')
+  }
+
   function copy() {
     if (!res?.formal_complaint) return
     navigator.clipboard.writeText(res.formal_complaint)
@@ -238,7 +229,7 @@ export default function VoiceFiling({ apiBase, onClose, result, setResult }) {
               <button className="vf-close" onClick={onClose}>✕</button>
             </div>
 
-            <div className="vf-body" ref={bodyRef}>
+            <div className="vf-body">
 
               <div>
                 <div className="vf-label">Upload Audio Recording</div>
@@ -323,7 +314,15 @@ export default function VoiceFiling({ apiBase, onClose, result, setResult }) {
                           {view === 'english'   && '🇬🇧 English Translation'}
                         </div>
                         {view === 'complaint' && (
-                          <button className="vf-copy-btn" onClick={copy}>{copied ? '✓ Copied' : 'Copy'}</button>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button className="vf-copy-btn" onClick={copy}>{copied ? '✓ Copied' : '📋 Copy'}</button>
+                            <button className="vf-copy-btn" onClick={shareWhatsApp} style={{ color: '#34d399' }}>
+                              💬 WhatsApp
+                            </button>
+                            <button className="vf-copy-btn" onClick={shareEmail} style={{ color: '#60a5fa' }}>
+                              ✉ Email
+                            </button>
+                          </div>
                         )}
                       </div>
                       <div className="vf-result-body">

@@ -381,13 +381,10 @@ export default function OfficerMode({ apiBase = '', onClose, result, setResult }
     setPreview(URL.createObjectURL(f))
   }
 
-  const [step, setStep] = useState('')
-
   async function scan() {
     if (!file) return
     setLoading(true)
     setRes(null)
-    setStep('📸 Reading handwriting...')
     const fd = new FormData()
     fd.append('image', file)
     fd.append('department', department)
@@ -542,18 +539,27 @@ export default function OfficerMode({ apiBase = '', onClose, result, setResult }
               </div>
 
               {/* Submit */}
-              <button className="om-submit-btn" onClick={scan} disabled={!file || loading}>
-                {loading
-                  ? <><div className="om-spinner" /> Generating Document…</>
-                  : <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-                        <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-                      </svg>
-                      Generate Formal Document
-                    </>
-                }
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  className="om-submit-btn"
+                  onClick={() => setRes(DEMO_RESULT)}
+                  style={{ background: 'rgba(91,33,182,0.4)', border: '1px solid rgba(139,92,246,0.4)', flex: 'unset', padding: '10px 16px', fontSize: 13 }}
+                >
+                  🎬 Demo
+                </button>
+                <button className="om-submit-btn" onClick={scan} disabled={!file || loading}>
+                  {loading
+                    ? <><div className="om-spinner" /> Generating Document…</>
+                    : <>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                          <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                        </svg>
+                        Generate Formal Document
+                      </>
+                  }
+                </button>
+              </div>
 
               {/* Results */}
               {res && (

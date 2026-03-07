@@ -323,6 +323,30 @@ function formatBold(text) {
   return parts.map((p, i) => i % 2 === 1 ? <strong key={i} style={{ color: '#e5e7eb' }}>{p}</strong> : p)
 }
 
+// Demo mode: pre-baked result so judges don't need to upload a real document
+const DEMO_RESULT = {
+  language: 'English',
+  language_code: 'en',
+  model: 'amazon.nova-lite-v1:0',
+  analysis: `**सारांश / Summary:**
+This is a legal eviction notice from a landlord demanding the tenant vacate the premises within 30 days due to alleged non-payment of rent for 3 consecutive months. The notice cites Section 106 of the Transfer of Property Act, 1882.
+
+**मुख्य बातें / Key Points:**
+1. You have been asked to vacate the property by [DATE] — 30 days from the notice date
+2. The landlord claims ₹45,000 is owed in unpaid rent (3 months × ₹15,000)
+3. Failure to vacate may result in legal eviction proceedings in civil court
+
+**आवश्यक कदम / Action Items:**
+1. Do NOT ignore this notice — respond in writing within 15 days acknowledging receipt
+2. If you have payment receipts, gather them immediately as proof of payment
+3. Consult a lawyer or visit your nearest District Legal Services Authority (DLSA) for free legal aid
+
+**समय सीमा / Deadlines:**
+- Vacate by: 30 days from notice date
+- Respond to notice: Within 15 days (recommended)
+- File counter-claim if disputing: Before the 30-day period expires`
+}
+
 export default function LegalLens({ apiBase = '', onClose, result, setResult }) {
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
@@ -453,6 +477,13 @@ export default function LegalLens({ apiBase = '', onClose, result, setResult }) 
                     <option value="ur">Urdu</option>
                   </select>
                 </div>
+                <button
+                  className="ll-submit-btn"
+                  onClick={() => { setRes(DEMO_RESULT) }}
+                  style={{ background: 'rgba(91,33,182,0.4)', border: '1px solid rgba(139,92,246,0.4)', flex: 'unset', minWidth: 'unset', padding: '10px 16px', fontSize: 13 }}
+                >
+                  🎬 Load Demo
+                </button>
                 <button className="ll-submit-btn" onClick={upload} disabled={!file || loading}>
                   {loading
                     ? <><div className="ll-spinner" /> Analyzing…</>
