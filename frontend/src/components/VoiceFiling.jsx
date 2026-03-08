@@ -226,7 +226,6 @@ export default function VoiceFiling({ apiBase, onClose, result, setResult }) {
                   <span>Speak your grievance · AI formats it legally</span>
                 </div>
               </div>
-              <button className="vf-close" onClick={onClose}>✕</button>
             </div>
 
             <div className="vf-body">

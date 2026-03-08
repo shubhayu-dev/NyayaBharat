@@ -85,16 +85,15 @@ body {
 	width: 100%;
 	padding: 0;
 	margin: 0;
-	max-width:max-content;
+	overflow-y: auto;
 
 .hero {
 	background: linear-gradient(180deg, #1b0830 0%, #2a0f3f 100%);
 	color: #fff;
-	padding: 80px 0;
-	border-radius: 0 px;
-	border: none;
-	margin: -24px;
 	padding: 80px 24px;
+	border-radius: 0;
+	border: none;
+	margin: -24px -24px 0 -24px;
 }
 .hero-inner {
 	display: flex;

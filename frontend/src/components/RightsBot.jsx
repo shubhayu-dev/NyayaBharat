@@ -342,7 +342,6 @@ export default function RightsBot({ apiBase = '', onClose }) {
                   <option value="as">Assamese</option>
                   <option value="ur">Urdu</option>
                 </select>
-                <button className="rb-close" onClick={onClose}>✕</button>
               </div>
             </div>
 

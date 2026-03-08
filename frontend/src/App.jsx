@@ -94,7 +94,7 @@ export default function App() {
         *, *::before, *::after { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #120820; }
         #root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        .content { flex: 1; overflow: hidden; position: relative; }
+        .content { flex: 1; overflow: auto; position: relative; }
       `}</style>
       <Navbar />
       <div className="content">
