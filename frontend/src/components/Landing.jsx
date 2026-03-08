@@ -567,7 +567,7 @@ export default function Landing({ onNavigate }) {
       <section className="features" ref={featuresRef}>
         <div className="section-inner">
           <h2 className="section-title">What NyayaBharat Does</h2>
-          <p className="muted">Powerful features that make complaint filing effortless</p>
+          <p className="muted">Powerful features that makes the law simpler</p>
           <div className="feature-grid">
             {features.map(({ icon, title, desc, route }) => (
               <div
