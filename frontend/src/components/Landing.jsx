@@ -537,15 +537,17 @@ export default function Landing({ onNavigate }) {
       <header className="hero">
         <div className="hero-inner">
           <div className="hero-left">
-            <div className="badge">AI-Powered Legal Aid</div>
+            <div className="badge">NyayaBharat</div>
             <h1>
               <span className="static">AI That </span>
               <span className="typed">{typed}</span>
               <span className="cursor" />
             </h1>
             <p className="lead">
-              Turn voice notes into official complaints.<br />
-              
+              24x7 working chatbot to ask your legal queries<br />
+              File a complaint using just your voice<br />
+              Scan & formalize petitions<br />
+              Simplify legal documents
             </p>
             <div className="hero-ctas">
               <a href="https://t.me/NyayaBharat_bot" target="_blank" rel="noopener noreferrer" className="btn primary">
@@ -560,29 +562,7 @@ export default function Landing({ onNavigate }) {
         </div>
       </header>
 
-      <section className="why">
-        <div className="section-inner">
-          <h2 className="section-title">Filing complaints shouldn't be this difficult</h2>
-          <p className="muted">Millions of Indians are shut out by language barriers, legal jargon, and broken portals.</p>
-          <div className="cards">
-            <div className="card">
-              <img src={brainIcon} alt="Language barrier" className="card-icon" />
-              <h3>Language Barrier</h3>
-              <p>Most government systems operate only in English or Hindi, excluding millions who speak regional languages.</p>
-            </div>
-            <div className="card">
-              <img src={scalesIcon} alt="Legal complexity" className="card-icon" />
-              <h3>Legal Complexity</h3>
-              <p>Citizens struggle with legal terminology and proper complaint formatting required by government departments.</p>
-            </div>
-            <div className="card">
-              <img src={girlIcon} alt="Digital illiteracy" className="card-icon" />
-              <h3>Digital Illiteracy</h3>
-              <p>Complex forms and online portals create barriers for citizens unfamiliar with technology and smartphones.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       <section className="features" ref={featuresRef}>
         <div className="section-inner">
@@ -611,6 +591,30 @@ export default function Landing({ onNavigate }) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="why">
+        <div className="section-inner">
+          <h2 className="section-title">Legal affairs shouldn't be this difficult</h2>
+          <p className="muted">Millions of Indians are shut out by language barriers, legal jargon, and broken portals.</p>
+          <div className="cards">
+            <div className="card">
+              <img src={brainIcon} alt="Language barrier" className="card-icon" />
+              <h3>Language Barrier</h3>
+              <p>Most government systems operate only in English or Hindi, excluding millions who speak regional languages.</p>
+            </div>
+            <div className="card">
+              <img src={scalesIcon} alt="Legal complexity" className="card-icon" />
+              <h3>Legal Complexity</h3>
+              <p>Citizens struggle with legal terminology and proper complaint formatting required by government departments.</p>
+            </div>
+            <div className="card">
+              <img src={girlIcon} alt="Digital illiteracy" className="card-icon" />
+              <h3>Digital Illiteracy</h3>
+              <p>Complex forms and online portals create barriers for citizens unfamiliar with technology and smartphones.</p>
+            </div>
           </div>
         </div>
       </section>
